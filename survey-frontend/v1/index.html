@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <!-- 移动端优化：视口设置 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <!-- 移动端优化：防止电话号码自动识别 -->
+    <meta name="format-detection" content="telephone=no">
+    <!-- iOS Safari 优化 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title data-key="title">Hanger Troubles? Let's Fix Them!</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    
+    <div class="lang-switcher">
+        <button data-lang="en">EN</button>
+        <button data-lang="zh-CN" class="active">简</button>
+        <button data-lang="zh-TW">繁</button>
+    </div>
+
+    <div id="celebrationContainer" class="celebration-container"></div>
+
+    <main class="main-wrapper">
+        <section class="media-carousel">
+            <div class="carousel-slide active">
+                <img src="images/hanger1.png" alt="A rack of elegant clothes">
+            </div>
+            <div class="carousel-slide">
+                <img src="images/hanger2.png" alt="Different types of hangers">
+            </div>
+            <div class="carousel-slide">
+                <img src="images/hanger3.png" alt="Close-up of a white hanger">
+            </div>
+        </section>
+
+        <div class="survey-container">
+            <div class="progress-container">
+                <div id="motivationIcon" class="motivation-icon">🚀</div>
+                <div class="progress-bar-wrapper">
+                    <div id="progressBar" class="progress-bar"></div>
+                </div>
+            </div>
+
+            <div class="survey-body">
+                <form id="hangerSurveyForm">
+                    <div class="survey-slide active" data-slide="1">
+                        <div class="intro-content">
+                            <div class="hanger-animation">
+                                <div class="hanger-icon">👚</div>
+                                <div class="hanger-icon deformed">👕</div>
+                            </div>
+                            <h2 data-key="introTitle">Ever feel like your hangers are failing you?</h2>
+                            <p data-key="introP">Your favorite sweater gets shoulder bumps. Your silky shirt slips off. We've all been there. Let's find a better way, together.</p>
+                            <div class="participant-counter">
+                                <span class="counter-icon" aria-hidden="true">👥</span>
+                                <span class="counter-text" data-key="participantText">Already</span>
+                                <span class="counter-number" id="participantCount">38</span>
+                                <span class="counter-text" data-key="participantText2">people shared their thoughts!</span>
+                            </div>
+                            <button type="button" class="next-btn" data-key="introBtn">Let's Complain!</button>
+                        </div>
+                    </div>
+
+                    <div class="survey-slide" data-slide="2">
+                        <label class="survey-question" data-key="q1Title">What's your biggest hanger headache? 🤕</label>
+                        <p class="instructions" data-key="q1Instruction">Drag your biggest frustration into the bin!</p>
+                        <div class="interactive-zone">
+                            <div class="problems-pool">
+                                <div class="problem-card" data-value="deformation" data-key="q1Opt1">😩<br>Deformation</div>
+                                <div class="problem-card" data-value="slipping" data-key="q1Opt2">😑<br>Slipping Off</div>
+                                <div class="problem-card" data-value="breaking" data-key="q1Opt3">😠<br>Breaking</div>
+                                <div class="problem-card" data-value="space" data-key="q1Opt4">😵<br>Takes Space</div>
+                            </div>
+                            <div id="dropZone" class="drop-zone">
+                                <p data-key="q1DropZone">Drop Here</p>
+                                <div class="bin-emoji">🗑️</div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="biggestProblem" name="biggest_problem">
+                        <div id="q1Stats" class="stats-chart hidden">
+                            <h3 data-key="statsTitle">What others chose:</h3>
+                            <div class="chart-container" id="q1ChartContainer"></div>
+                        </div>
+                        <div class="navigation-btns">
+                            <button type="button" class="prev-btn" data-key="backBtn">Back</button>
+                            <button type="button" class="next-btn hidden" data-key="nextBtn">Next</button>
+                        </div>
+                    </div>
+                    
+                    <div class="survey-slide" data-slide="3">
+                        <label class="survey-question" data-key="q2Title">Btw, what kind of hanger do you use most? 🤔</label>
+                        <div class="options-grid-emoji">
+                            <label><input type="radio" name="hanger_type" value="plastic"><div class="option-card-emoji"><span data-key="q2Opt1">Plastic</span></div></label>
+                            <label><input type="radio" name="hanger_type" value="wood"><div class="option-card-emoji"><span data-key="q2Opt2">Wood</span></div></label>
+                            <label><input type="radio" name="hanger_type" value="velvet"><div class="option-card-emoji"><span data-key="q2Opt3">Velvet</span></div></label>
+                            <label><input type="radio" name="hanger_type" value="wire"><div class="option-card-emoji"><span data-key="q2Opt4">Wire</span></div></label>
+                            <label><input type="radio" name="hanger_type" value="custom" id="customOption"><div class="option-card-emoji custom-option"><span data-key="q2Opt5">Other ✏️</span></div></label>
+                        </div>
+                        <div id="q2Stats" class="stats-chart hidden">
+                            <h3 data-key="statsTitle">What others chose:</h3>
+                            <div class="chart-container" id="q2ChartContainer"></div>
+                        </div>
+                         <div class="navigation-btns">
+                            <button type="button" class="prev-btn" data-key="backBtn2">Back</button>
+                            <button type="button" class="next-btn" data-key="nextBtn2">Next</button>
+                        </div>
+                    </div>
+
+                    <div class="survey-slide" data-slide="4">
+                        <label class="survey-question" data-key="q3Title">If a new multi-functional hanger appeared, would you buy it?</label>
+                        <div class="emoji-slider-container">
+                            <span class="slider-emoji">🤧</span>
+                            <input type="range" id="interestSlider" name="buy_interest" min="1" max="5" value="3" class="emoji-slider">
+                            <span class="slider-emoji">😍</span>
+                        </div>
+                        <div id="sliderValue" class="slider-value-display">🤔</div>
+                        <div class="navigation-btns">
+                            <button type="button" class="prev-btn" data-key="backBtn3">Back</button>
+                            <button type="button" class="submit-btn" data-key="submitBtn">Finish!</button>
+                        </div>
+                    </div>
+                    
+                    <div class="survey-slide" data-slide="5">
+                        <div class="thank-you-content">
+                            <h2 data-key="thanksTitle">Thank You! 🙏</h2>
+                            <p data-key="thanksP">Your ideas are sparking our innovation! We're one step closer to the perfect hanger.</p>
+                            <div class="wordcloud-section">
+                                <h3 data-key="wordcloudTitle">What others suggested:</h3>
+                                <div id="wordCloud" class="word-cloud-container"></div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <div id="blackboardModal" class="blackboard-modal">
+        <div class="blackboard-container">
+            <div class="blackboard">
+                <button class="blackboard-close" data-key="closeBtn">✕</button>
+                <h3 data-key="blackboardTitle">Tell us more!</h3>
+                <textarea id="customInput" class="blackboard-input" rows="3" placeholder="What type of hanger do you use?"></textarea>
+                <button class="blackboard-submit" data-key="blackboardSubmit">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const surveyData = {
+            totalParticipants: 142,
+            q1_biggestProblem: { deformation: 58, slipping: 45, breaking: 25, space: 14 },
+            q2_hangerType: { plastic: 70, wood: 20, velvet: 35, wire: 12, custom: 5 },
+            customKeywords: [
+                { text: "Non-slip", weight: 8 }, { text: "Stackable", weight: 7 },
+                { text: "Adjustable", weight: 6 }, { text: "Durable", weight: 5 },
+                { text: "For scarfs", weight: 4 }, { text: "Eco-friendly", weight: 4 },
+                { text: "For pants", weight: 3 }, { text: "Slim profile", weight: 3 },
+                { text: "Multi-use", weight: 2 }, { text: "For kids", weight: 2 },
+                { text: "Rotatable hook", weight: 1 }, { text: "For heavy coats", weight: 1 }
+            ]
+        };
+    </script>
+    <script src="script.js"></script>
+</body>
+</html>

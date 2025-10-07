@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            border: 2px solid #3498db;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        .log {
+            background: #f0f0f0;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .error { color: red; }
+        .success { color: green; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug Console</h1>
+
+    <div class="test-section">
+        <h2>JavaScript Errors Check</h2>
+        <button onclick="checkScripts()">Check All Scripts</button>
+        <div id="scriptLog" class="log"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Event Listener Test</h2>
+        <button onclick="testButtonClick()">Test Button Click</button>
+        <div id="eventLog" class="log"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Quick Actions</h2>
+        <button onclick="window.location.href='index.html'">Open Main Page</button>
+        <button onclick="location.reload()">Refresh This Page</button>
+    </div>
+
+    <script>
+        function log(message, type = 'info', containerId = 'scriptLog') {
+            const logDiv = document.getElementById(containerId);
+            const p = document.createElement('p');
+            p.className = type;
+            p.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(p);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function checkScripts() {
+            const logDiv = document.getElementById('scriptLog');
+            logDiv.innerHTML = '<p>Checking scripts...</p>';
+
+            // Check if data.js loads
+            const dataScript = document.createElement('script');
+            dataScript.src = 'data.js';
+            dataScript.onload = () => {
+                if (typeof surveyData !== 'undefined') {
+                    log('✅ data.js loaded successfully', 'success');
+                    log(`Total participants: ${surveyData.totalParticipants}`, 'info');
+                } else {
+                    log('❌ data.js loaded but surveyData is undefined', 'error');
+                }
+
+                // Check script.js
+                const scriptJs = document.createElement('script');
+                scriptJs.src = 'script.js';
+                scriptJs.onload = () => {
+                    log('✅ script.js loaded', 'success');
+                };
+                scriptJs.onerror = () => {
+                    log('❌ script.js failed to load or has errors', 'error');
+                };
+                document.head.appendChild(scriptJs);
+            };
+            dataScript.onerror = () => {
+                log('❌ data.js failed to load', 'error');
+            };
+            document.head.appendChild(dataScript);
+        }
+
+        function testButtonClick() {
+            const logDiv = document.getElementById('eventLog');
+            logDiv.innerHTML = '';
+
+            log('Testing button click event...', 'info', 'eventLog');
+
+            // Create a test button
+            const testBtn = document.createElement('button');
+            testBtn.className = 'next-btn';
+            testBtn.textContent = 'Test Next Button';
+            testBtn.style.display = 'none';
+            document.body.appendChild(testBtn);
+
+            // Add event listener
+            document.body.addEventListener('click', (e) => {
+                if (e.target.matches('.next-btn')) {
+                    log('✅ Click event detected on .next-btn', 'success', 'eventLog');
+                }
+            });
+
+            // Trigger click
+            testBtn.click();
+            log('Button clicked programmatically', 'info', 'eventLog');
+
+            setTimeout(() => {
+                document.body.removeChild(testBtn);
+            }, 100);
+        }
+
+        // Auto-check on load
+        window.addEventListener('load', () => {
+            log('Page loaded, ready for testing', 'success');
+        });
+
+        // Catch any global errors
+        window.addEventListener('error', (e) => {
+            log(`Global error: ${e.message}`, 'error');
+        });
+    </script>
+</body>
+</html>

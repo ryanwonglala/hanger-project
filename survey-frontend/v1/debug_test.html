@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Test - Hanger Project</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 { color: #3498db; }
+        .test-section {
+            border: 2px solid #e2e8f0;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 10px;
+        }
+        .test-section h2 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin-left: 10px;
+        }
+        .status.pass { background: #2ecc71; color: white; }
+        .status.fail { background: #e74c3c; color: white; }
+        .status.pending { background: #f39c12; color: white; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Hanger Project - Debug Testing Page</h1>
+
+    <div class="test-section">
+        <h2>✅ Test Results</h2>
+        <p><strong>1. Carousel Roulette Effect:</strong> <span id="test1" class="status pending">PENDING</span></p>
+        <p><strong>2. Custom Input Blackboard:</strong> <span id="test2" class="status pending">PENDING</span></p>
+        <p><strong>3. Theme Switcher:</strong> <span id="test3" class="status pending">PENDING</span></p>
+        <p><strong>4. Language Support:</strong> <span id="test4" class="status pending">PENDING</span></p>
+    </div>
+
+    <div class="test-section">
+        <h2>🔗 Quick Links</h2>
+        <button onclick="window.open('index.html', '_blank')">Open Main Page</button>
+        <button onclick="window.open('test_checklist.md', '_blank')">View Test Checklist</button>
+    </div>
+
+    <div class="test-section">
+        <h2>📋 Manual Test Instructions</h2>
+        <ol>
+            <li><strong>Carousel Test:</strong> Open index.html and verify the images rotate with a roulette effect (rotate 360° + scale + fade)</li>
+            <li><strong>Blackboard Test:</strong> Navigate to Question 2, click "Other ✏️", verify the blackboard slides down with animation</li>
+            <li><strong>Theme Test:</strong> Click the 4 theme buttons on the right side (🎨 🔩 ✨🌳), verify background changes</li>
+            <li><strong>Language Test:</strong> Switch between EN/简/繁 buttons, verify all text translates including blackboard modal</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>🐛 Common Issues & Solutions</h2>
+        <ul>
+            <li><strong>Images not loading:</strong> Check that images folder contains hanger1.jpg, hanger2.png, hanger3.jpg</li>
+            <li><strong>Carousel not rotating:</strong> Check browser console for JavaScript errors</li>
+            <li><strong>Blackboard not appearing:</strong> Verify modal HTML is present in index.html</li>
+            <li><strong>Theme not changing:</strong> Check CSS classes are applied to body element</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>📝 Feature Summary</h2>
+        <h3>1. Roulette Carousel (轮盘式轮播)</h3>
+        <ul>
+            <li>✅ Only shows on intro page (slide 1)</li>
+            <li>✅ Rotates 360° with scale and fade effect</li>
+            <li>✅ Auto-hides when entering survey</li>
+            <li>✅ 4-second interval between slides</li>
+        </ul>
+
+        <h3>2. Custom Input Blackboard (小黑板)</h3>
+        <ul>
+            <li>✅ Appears when clicking "Other ✏️" option</li>
+            <li>✅ Blackboard style with wooden hanger effect</li>
+            <li>✅ Slide-down animation</li>
+            <li>✅ Close button with rotate animation</li>
+            <li>✅ Click outside to close</li>
+            <li>✅ Enter key to submit</li>
+            <li>✅ Trilingual support (EN/CN/TW)</li>
+        </ul>
+
+        <h3>3. Material Themes (材质主题)</h3>
+        <ul>
+            <li>✅ Plastic 🎨 - Purple gradient</li>
+            <li>✅ Metal 🔩 - Silver/gray gradient</li>
+            <li>✅ Velvet ✨ - Purple/red gradient</li>
+            <li>✅ Wood 🌳 - Brown gradient</li>
+            <li>✅ Theme persists after refresh (localStorage)</li>
+            <li>✅ Smooth transition animations</li>
+        </ul>
+    </div>
+
+    <script>
+        // Auto-run basic checks
+        window.addEventListener('load', () => {
+            // Simulate test execution
+            setTimeout(() => {
+                document.getElementById('test1').textContent = 'MANUAL CHECK';
+                document.getElementById('test1').className = 'status pending';
+            }, 500);
+
+            setTimeout(() => {
+                document.getElementById('test2').textContent = 'MANUAL CHECK';
+                document.getElementById('test2').className = 'status pending';
+            }, 1000);
+
+            setTimeout(() => {
+                document.getElementById('test3').textContent = 'MANUAL CHECK';
+                document.getElementById('test3').className = 'status pending';
+            }, 1500);
+
+            setTimeout(() => {
+                document.getElementById('test4').textContent = 'MANUAL CHECK';
+                document.getElementById('test4').className = 'status pending';
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
