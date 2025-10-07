@@ -30,6 +30,8 @@
             <div class="carousel-slide">
                 <img src="images/hanger3.png" alt="Close-up of a white hanger">
             </div>
+            <!-- 黑板墙容器移到这里 -->
+            <div id="feedback-wall-container" class="hidden"></div>
         </section>
 
         <div class="survey-container">
@@ -123,11 +125,8 @@
                         <div class="thank-you-content">
                             <div class="thank-you-icon">🎉</div>
                             <h2 data-key="thanksTitle">Thank You! 🙏</h2>
-                            <p data-key="thanksP">Your ideas are sparking our innovation! We're one step closer to the perfect hanger.</p>
-                            <div class="thank-you-message">
-                                <p>你的反馈对我们非常重要！</p>
-                                <p>我们会认真考虑每一条建议。</p>
-                            </div>
+                            <p data-key="thanksP">Your ideas are sparking our innovation! We're one step closer to a better design.</p>
+                            <!-- 原黑板墙容器已移除 -->
                         </div>
                     </div>
                 </form>
@@ -146,9 +145,8 @@
         </div>
     </div>
 
-    <!-- ====== 🆕 引入 API 配置文件（必须在 script.js 之前） ====== -->
     <script src="config/api.js"></script>
-    <!-- ====== 🆕 第三步：不再需要假数据，全部从API获取 ====== -->
     <script src="script.js"></script>
 </body>
 </html>
+

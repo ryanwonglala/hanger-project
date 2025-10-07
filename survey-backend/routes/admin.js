@@ -24,36 +24,21 @@ router.post('/login', [
 ], async (req, res) => {
   try {
     const { username, password } = req.body;
-
-    // 查找管理员
     const admin = await Admin.findOne({ username, isActive: true });
-    
     if (!admin) {
       return res.status(401).json({ error: '用户名或密码错误' });
     }
-
-    // 验证密码
     const isMatch = await admin.comparePassword(password);
-    
     if (!isMatch) {
       return res.status(401).json({ error: '用户名或密码错误' });
     }
-
-    // 更新最后登录时间
     admin.lastLogin = new Date();
     await admin.save();
-
-    // 生成JWT令牌
     const token = generateToken(admin._id);
-
     res.json({
       success: true,
       token,
-      admin: {
-        id: admin._id,
-        username: admin.username,
-        role: admin.role
-      }
+      admin: { id: admin._id, username: admin.username, role: admin.role }
     });
   } catch (error) {
     console.error('登录失败:', error);
@@ -78,15 +63,9 @@ router.get('/submissions', authenticate, async (req, res) => {
     res.json({
       success: true,
       data: submissions,
-      pagination: {
-        total,
-        page,
-        pages: Math.ceil(total / limit),
-        limit
-      }
+      pagination: { total, page, pages: Math.ceil(total / limit), limit }
     });
   } catch (error) {
-    console.error('获取提交记录失败:', error);
     res.status(500).json({ error: '获取数据失败' });
   }
 });
@@ -98,14 +77,11 @@ router.get('/submissions/:id', authenticate, [
 ], async (req, res) => {
   try {
     const submission = await Submission.findById(req.params.id);
-    
     if (!submission) {
       return res.status(404).json({ error: '提交记录不存在' });
     }
-
     res.json({ success: true, data: submission });
   } catch (error) {
-    console.error('获取提交详情失败:', error);
     res.status(500).json({ error: '获取数据失败' });
   }
 });
@@ -117,28 +93,15 @@ router.put('/submissions/:id', authenticate, [
 ], async (req, res) => {
   try {
     const { demographics, answers, isValid, notes } = req.body;
-
-    const submission = await Submission.findById(req.params.id);
-    
+    const submission = await Submission.findByIdAndUpdate(req.params.id, 
+        { demographics, answers, isValid, notes },
+        { new: true, runValidators: true }
+    );
     if (!submission) {
       return res.status(404).json({ error: '提交记录不存在' });
     }
-
-    // 更新字段
-    if (demographics) submission.demographics = demographics;
-    if (answers) submission.answers = answers;
-    if (typeof isValid === 'boolean') submission.isValid = isValid;
-    if (notes !== undefined) submission.notes = notes;
-
-    await submission.save();
-
-    res.json({
-      success: true,
-      message: '更新成功',
-      data: submission
-    });
+    res.json({ success: true, message: '更新成功', data: submission });
   } catch (error) {
-    console.error('更新提交失败:', error);
     res.status(500).json({ error: '更新失败' });
   }
 });
@@ -150,33 +113,23 @@ router.delete('/submissions/:id', authenticate, [
 ], async (req, res) => {
   try {
     const submission = await Submission.findByIdAndDelete(req.params.id);
-    
     if (!submission) {
       return res.status(404).json({ error: '提交记录不存在' });
     }
-
-    // 同时删除相关的反馈
     await Feedback.deleteMany({ submissionId: req.params.id });
-
-    res.json({
-      success: true,
-      message: '删除成功'
-    });
+    res.json({ success: true, message: '删除成功' });
   } catch (error) {
-    console.error('删除提交失败:', error);
     res.status(500).json({ error: '删除失败' });
   }
 });
 
-// 6. 获取所有反馈（含审核状态）
+// 6. 获取所有反馈（聚合用户）
 router.get('/feedback', authenticate, async (req, res) => {
   try {
-    const { status, page = 1, limit = 50 } = req.query;
+    const { status = 'pending', page = 1, limit = 50 } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
-
     const query = status ? { status } : {};
     
-    const total = await Feedback.countDocuments(query);
     const feedbacks = await Feedback
       .find(query)
       .populate('submissionId', 'demographics submittedAt')
@@ -184,15 +137,26 @@ router.get('/feedback', authenticate, async (req, res) => {
       .skip(skip)
       .limit(parseInt(limit));
 
+    // 按 submissionId 聚合
+    const groupedByUser = feedbacks.reduce((acc, feedback) => {
+      if (!feedback.submissionId) return acc;
+      const userId = feedback.submissionId._id.toString();
+      if (!acc[userId]) {
+        acc[userId] = {
+          submission: feedback.submissionId,
+          items: []
+        };
+      }
+      acc[userId].items.push(feedback);
+      return acc;
+    }, {});
+
+    const total = Object.keys(groupedByUser).length;
+
     res.json({
       success: true,
-      data: feedbacks,
-      pagination: {
-        total,
-        page: parseInt(page),
-        pages: Math.ceil(total / parseInt(limit)),
-        limit: parseInt(limit)
-      }
+      data: Object.values(groupedByUser),
+      pagination: { total, page: parseInt(page), pages: Math.ceil(total / parseInt(limit)), limit: parseInt(limit) }
     });
   } catch (error) {
     console.error('获取反馈失败:', error);
@@ -203,34 +167,21 @@ router.get('/feedback', authenticate, async (req, res) => {
 // 7. 更新反馈审核状态
 router.put('/feedback/:id/status', authenticate, [
   param('id').isMongoId(),
-  body('status').isIn(['pending', 'approved', 'rejected']),
+  body('status').isIn(['approved', 'rejected']),
   validate
 ], async (req, res) => {
   try {
-    const { status, reviewNote, displayOrder } = req.body;
-
+    const { status } = req.body;
     const feedback = await Feedback.findById(req.params.id);
-    
     if (!feedback) {
       return res.status(404).json({ error: '反馈不存在' });
     }
-
     feedback.status = status;
     feedback.reviewedBy = req.admin._id;
     feedback.reviewedAt = new Date();
-    
-    if (reviewNote) feedback.reviewNote = reviewNote;
-    if (displayOrder !== undefined) feedback.displayOrder = displayOrder;
-
     await feedback.save();
-
-    res.json({
-      success: true,
-      message: '审核状态已更新',
-      data: feedback
-    });
+    res.json({ success: true, message: '审核状态已更新', data: feedback });
   } catch (error) {
-    console.error('更新审核状态失败:', error);
     res.status(500).json({ error: '更新失败' });
   }
 });
@@ -242,27 +193,13 @@ router.post('/feedback/batch-review', authenticate, [
   validate
 ], async (req, res) => {
   try {
-    const { ids, status, reviewNote } = req.body;
-
+    const { ids, status } = req.body;
     const result = await Feedback.updateMany(
       { _id: { $in: ids } },
-      {
-        $set: {
-          status,
-          reviewedBy: req.admin._id,
-          reviewedAt: new Date(),
-          ...(reviewNote && { reviewNote })
-        }
-      }
+      { $set: { status, reviewedBy: req.admin._id, reviewedAt: new Date() } }
     );
-
-    res.json({
-      success: true,
-      message: `成功审核 ${result.modifiedCount} 条反馈`,
-      modifiedCount: result.modifiedCount
-    });
+    res.json({ success: true, message: `成功审核 ${result.modifiedCount} 条反馈`, modifiedCount: result.modifiedCount });
   } catch (error) {
-    console.error('批量审核失败:', error);
     res.status(500).json({ error: '批量审核失败' });
   }
 });
@@ -270,67 +207,20 @@ router.post('/feedback/batch-review', authenticate, [
 // 9. 获取统计分析数据（仪表盘）
 router.get('/dashboard/stats', authenticate, async (req, res) => {
   try {
-    // 总提交数
     const totalSubmissions = await Submission.countDocuments();
-    
-    // 今日提交数
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const todaySubmissions = await Submission.countDocuments({
-      submittedAt: { $gte: today }
-    });
-
-    // 反馈统计
-    const feedbackStats = await Feedback.aggregate([
-      {
-        $group: {
-          _id: '$status',
-          count: { $sum: 1 }
-        }
-      }
-    ]);
-
-    const feedbackByStatus = {};
-    feedbackStats.forEach(stat => {
-      feedbackByStatus[stat._id] = stat.count;
-    });
-
-    // 最近7天趋势
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const recentTrend = await Submission.aggregate([
-      {
-        $match: {
-          submittedAt: { $gte: sevenDaysAgo }
-        }
-      },
-      {
-        $group: {
-          _id: {
-            $dateToString: { format: '%Y-%m-%d', date: '$submittedAt' }
-          },
-          count: { $sum: 1 }
-        }
-      },
-      { $sort: { _id: 1 } }
-    ]);
-
-    // 高频词分析
-    const allFeedbacks = await Feedback.find({ status: 'approved' });
-    const texts = allFeedbacks.map(f => f.content);
-    const keywords = analyzeHighFrequencyWords(texts, 2, 3);
-
+    const todaySubmissions = await Submission.countDocuments({ submittedAt: { $gte: today } });
+    const feedbackStats = await Feedback.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]);
+    const feedbackByStatus = feedbackStats.reduce((acc, stat) => {
+      acc[stat._id] = stat.count;
+      return acc;
+    }, {});
     res.json({
       success: true,
-      stats: {
-        totalSubmissions,
-        todaySubmissions,
-        feedbackByStatus,
-        recentTrend,
-        topKeywords: Object.entries(keywords).slice(0, 10)
-      }
+      stats: { totalSubmissions, todaySubmissions, feedbackByStatus }
     });
   } catch (error) {
-    console.error('获取统计数据失败:', error);
     res.status(500).json({ error: '获取统计数据失败' });
   }
 });
@@ -339,11 +229,7 @@ router.get('/dashboard/stats', authenticate, async (req, res) => {
 router.get('/verify', authenticate, (req, res) => {
   res.json({
     success: true,
-    admin: {
-      id: req.admin._id,
-      username: req.admin.username,
-      role: req.admin.role
-    }
+    admin: { id: req.admin._id, username: req.admin.username, role: req.admin.role }
   });
 });
 

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { body, param, validationResult } = require('express-validator');
+const { body, param, query, validationResult } = require('express-validator');
 const Submission = require('../models/Submission');
 const Feedback = require('../models/Feedback');
 const { analyzeWordsByLength } = require('../utils/wordAnalysis');
@@ -20,12 +20,12 @@ router.post('/submit', [
   body('demographics.age').notEmpty().withMessage('年龄不能为空'),
   body('demographics.occupation').notEmpty().withMessage('职业不能为空'),
   body('answers').isObject().withMessage('答案必须是对象格式'),
+  body('language').notEmpty().withMessage('语言环境不能为空'),
   validate
 ], async (req, res) => {
   try {
-    const { demographics, answers, openEndedAnswers } = req.body;
+    const { demographics, answers, openEndedAnswers, language } = req.body;
 
-    // 创建提交记录
     const submission = new Submission({
       demographics,
       answers,
@@ -36,7 +36,6 @@ router.post('/submit', [
 
     await submission.save();
 
-    // 如果有开放式回答，创建反馈记录
     if (openEndedAnswers && openEndedAnswers.length > 0) {
       const feedbackPromises = openEndedAnswers.map(item => {
         if (item.answer && item.answer.trim()) {
@@ -44,11 +43,11 @@ router.post('/submit', [
             submissionId: submission._id,
             content: item.answer,
             questionId: item.questionId,
-            questionText: item.questionText
+            questionText: item.questionText,
+            language: language // 保存语言
           }).save();
         }
       });
-
       await Promise.all(feedbackPromises.filter(Boolean));
     }
 
@@ -78,32 +77,16 @@ router.get('/stats/total', async (req, res) => {
 router.get('/stats/demographics', async (req, res) => {
   try {
     const submissions = await Submission.find({ isValid: true });
-
-    // 统计性别
-    const genderStats = {};
-    const ageStats = {};
-    const occupationStats = {};
+    const genderStats = {}, ageStats = {}, occupationStats = {};
 
     submissions.forEach(sub => {
-      // 性别统计
-      const gender = sub.demographics.gender;
+      const { gender, age, occupation } = sub.demographics;
       genderStats[gender] = (genderStats[gender] || 0) + 1;
-
-      // 年龄统计
-      const age = sub.demographics.age;
       ageStats[age] = (ageStats[age] || 0) + 1;
-
-      // 职业统计
-      const occupation = sub.demographics.occupation;
       occupationStats[occupation] = (occupationStats[occupation] || 0) + 1;
     });
 
-    res.json({
-      gender: genderStats,
-      age: ageStats,
-      occupation: occupationStats,
-      total: submissions.length
-    });
+    res.json({ gender: genderStats, age: ageStats, occupation: occupationStats, total: submissions.length });
   } catch (error) {
     console.error('获取画像数据失败:', error);
     res.status(500).json({ error: '获取数据失败' });
@@ -124,51 +107,52 @@ router.get('/results/question/:questionId', [
 
     submissions.forEach(sub => {
       const answer = sub.answers.get(questionId);
-      if (answer) {
+      if (answer != null) { // Use != null to catch both undefined and null
         totalAnswers++;
-        // 处理单选
-        if (typeof answer === 'string') {
-          optionCounts[answer] = (optionCounts[answer] || 0) + 1;
-        }
-        // 处理多选
-        else if (Array.isArray(answer)) {
+        if (Array.isArray(answer)) {
           answer.forEach(option => {
             optionCounts[option] = (optionCounts[option] || 0) + 1;
           });
+        } else {
+          optionCounts[answer] = (optionCounts[answer] || 0) + 1;
         }
       }
     });
 
-    // 计算百分比
     const results = {};
     Object.entries(optionCounts).forEach(([option, count]) => {
       results[option] = {
         count,
-        percentage: totalAnswers > 0 ? ((count / totalAnswers) * 100).toFixed(2) : 0
+        percentage: totalAnswers > 0 ? ((count / totalAnswers) * 100).toFixed(1) : "0.0"
       };
     });
 
-    res.json({
-      questionId,
-      totalAnswers,
-      results
-    });
+    res.json({ questionId, totalAnswers, results });
   } catch (error) {
     console.error('获取题目统计失败:', error);
     res.status(500).json({ error: '获取数据失败' });
   }
 });
 
-// 5. 获取公开的反馈（黑板墙）
-router.get('/feedback/public', async (req, res) => {
+// 5. 获取公开的反馈（黑板墙） - 已更新
+router.get('/feedback/public', [
+    query('limit').optional().isInt({ min: 1, max: 50 }).toInt(),
+    query('lang').optional().isString().isIn(['en', 'zh-CN', 'zh-TW']),
+    validate
+], async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 50;
+    const { limit = 10, lang } = req.query;
     
+    let query = { status: 'approved' };
+    if (lang) {
+        query.language = lang;
+    }
+
     const feedbacks = await Feedback
-      .find({ status: 'approved' })
+      .find(query)
       .sort({ displayOrder: -1, createdAt: -1 })
       .limit(limit)
-      .select('content questionText createdAt');
+      .select('content');
 
     res.json({
       success: true,
@@ -181,24 +165,18 @@ router.get('/feedback/public', async (req, res) => {
   }
 });
 
+
 // 6. 获取高频词统计
 router.get('/stats/keywords', async (req, res) => {
   try {
     const wordLength = parseInt(req.query.length) || 2;
     const minFrequency = parseInt(req.query.minFreq) || 3;
 
-    // 获取所有已审核通过的反馈
     const feedbacks = await Feedback.find({ status: 'approved' });
     const texts = feedbacks.map(f => f.content);
-
-    // 分析高频词
     const keywords = analyzeWordsByLength(texts, wordLength, minFrequency);
 
-    res.json({
-      success: true,
-      keywords,
-      totalFeedbacks: texts.length
-    });
+    res.json({ success: true, keywords, totalFeedbacks: texts.length });
   } catch (error) {
     console.error('获取高频词失败:', error);
     res.status(500).json({ error: '分析失败' });

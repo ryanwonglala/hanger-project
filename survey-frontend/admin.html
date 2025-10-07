@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>问卷管理后台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --accent-color: #3b82f6; /* Tailwind blue-500 */
+        }
+        .sidebar-link {
+            transition: all 0.2s ease-in-out;
+        }
+        .sidebar-link:hover {
+            background-color: #eff6ff; /* blue-50 */
+            color: var(--accent-color);
+            transform: translateX(4px);
+        }
+        .sidebar-link.active {
+            background-color: var(--accent-color);
+            color: white;
+            font-weight: 600;
+        }
+        .sidebar-link.active:hover {
+            background-color: #2563eb; /* blue-600 */
+        }
+        .loader {
+            border: 4px solid #e5e7eb; /* gray-200 */
+            border-top: 4px solid var(--accent-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .status-filter-btn.active {
+            background-color: var(--accent-color);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .modal-backdrop {
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s ease;
+        }
+        .modal-content {
+             animation: slideUp 0.3s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <!-- 全局容器 -->
+    <div id="app" class="h-screen overflow-hidden">
+
+        <!-- 登录视图 -->
+        <div id="login-view" class="w-full h-full flex items-center justify-center bg-gray-50">
+            <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-sm">
+                <h1 class="text-2xl font-bold text-center text-gray-800 mb-6">管理员登录</h1>
+                <form id="login-form">
+                    <div class="mb-4">
+                        <label for="username" class="block text-sm font-medium text-gray-700">用户名</label>
+                        <input type="text" id="username" name="username" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required value="admin">
+                    </div>
+                    <div class="mb-6">
+                        <label for="password" class="block text-sm font-medium text-gray-700">密码</label>
+                        <input type="password" id="password" name="password" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required value="admin123456">
+                    </div>
+                    <button type="submit" class="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-200">
+                        登录
+                    </button>
+                    <p id="login-error" class="text-red-500 text-sm mt-4 text-center"></p>
+                </form>
+            </div>
+        </div>
+
+        <!-- 主仪表盘视图 (默认隐藏) -->
+        <div id="dashboard-view" class="hidden h-full">
+             <div class="flex w-full h-full">
+                <!-- 侧边栏 -->
+                <aside class="w-64 bg-white shadow-lg flex-shrink-0 flex flex-col">
+                    <div class="p-6 text-2xl font-bold text-gray-800 border-b">管理后台</div>
+                    <nav id="sidebar-nav" class="mt-6 flex-1">
+                        <a href="#dashboard" class="sidebar-link block py-3 px-6 text-gray-700 rounded-r-full mr-4" data-view="dashboard-content">📊 仪表盘</a>
+                        <a href="#submissions" class="sidebar-link block py-3 px-6 text-gray-700 rounded-r-full mr-4" data-view="submissions-content">📝 问卷管理</a>
+                        <a href="#feedback" class="sidebar-link block py-3 px-6 text-gray-700 rounded-r-full mr-4" data-view="feedback-content">📢 反馈审核</a>
+                    </nav>
+                     <div class="p-4 border-t">
+                        <a href="#" id="logout-btn" class="sidebar-link block py-3 px-6 text-gray-700 rounded-md">🚪 退出登录</a>
+                    </div>
+                </aside>
+
+                <!-- 主内容区 -->
+                <main id="main-content" class="flex-1 p-8 overflow-y-auto">
+                    <!-- 各个视图的内容将在这里动态渲染 -->
+                </main>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 问卷详情模态框 (默认隐藏) -->
+    <div id="submission-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 modal-backdrop">
+        <div id="submission-modal-content" class="bg-white rounded-2xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 modal-content">
+            <!-- 详情内容将在这里渲染 -->
+        </div>
+    </div>
+
+    <!-- 模板 -->
+    <template id="loader-template">
+        <div class="flex justify-center items-center h-64"><div class="loader"></div></div>
+    </template>
+    
+    <template id="dashboard-content-template">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">仪表盘</h1>
+        <div id="dashboard-stats-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"></div>
+        <div class="mt-8 bg-white p-6 rounded-2xl shadow-lg">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-700">问卷数据可视化</h2>
+                <select id="question-selector" class="border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    <option value="biggest_problem">最大痛点</option>
+                    <option value="hanger_type">常用衣架</option>
+                    <option value="buy_interest">购买意愿</option>
+                </select>
+            </div>
+            <div class="h-96"><canvas id="question-chart"></canvas></div>
+        </div>
+    </template>
+
+    <template id="submissions-content-template">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">问卷管理</h1>
+        <div class="bg-white p-6 rounded-2xl shadow-lg">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">用户ID (后6位)</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">提交时间</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">用户画像</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="submissions-table-body" class="bg-white divide-y divide-gray-200"></tbody>
+                </table>
+            </div>
+        </div>
+    </template>
+    
+    <template id="feedback-content-template">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">反馈审核</h1>
+        <div class="bg-white p-6 rounded-2xl shadow-lg">
+            <div class="mb-4 space-x-2">
+                <button data-status="pending" class="status-filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-md transition">待审核</button>
+                <button data-status="approved" class="status-filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-md transition">已通过</button>
+                <button data-status="rejected" class="status-filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-md transition">已拒绝</button>
+            </div>
+            <div id="feedback-list" class="space-y-6"></div>
+        </div>
+    </template>
+
+    <script src="config/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const appState = {
+                token: localStorage.getItem('admin_token'),
+                currentViewId: 'dashboard-content',
+                feedbackStatusFilter: 'pending',
+                chartInstance: null,
+            };
+
+            API_CONFIG.BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+                ? 'http://localhost:3000' 
+                : 'https://hanger-project-survey-backend.vercel.app';
+
+            const switchAppView = (viewName) => {
+                const loginView = document.getElementById('login-view');
+                const dashboardView = document.getElementById('dashboard-view');
+                if (viewName === 'login') {
+                    loginView.classList.remove('hidden');
+                    dashboardView.classList.add('hidden');
+                } else {
+                    loginView.classList.add('hidden');
+                    dashboardView.classList.remove('hidden');
+                }
+            };
+            
+            const renderMainContent = (viewId) => {
+                const mainContent = document.getElementById('main-content');
+                const template = document.getElementById(`${viewId}-template`);
+                if (!template) {
+                    mainContent.innerHTML = `<p class="text-red-500">错误: 视图模板 "${viewId}" 未找到。</p>`;
+                    return;
+                }
+                mainContent.innerHTML = '';
+                mainContent.appendChild(template.content.cloneNode(true));
+                loadDataForView(viewId);
+            };
+            
+            const loadDataForView = (viewId) => {
+                if (appState.chartInstance) {
+                    appState.chartInstance.destroy();
+                    appState.chartInstance = null;
+                }
+                switch (viewId) {
+                    case 'dashboard-content': setupDashboardView(); break;
+                    case 'submissions-content': loadSubmissions(); break;
+                    case 'feedback-content': setupFeedbackView(); break;
+                }
+            };
+
+            const setupDashboardView = () => {
+                loadDashboardStats();
+                const selector = document.getElementById('question-selector');
+                if (selector) {
+                    selector.addEventListener('change', (e) => renderQuestionChart(e.target.value));
+                    renderQuestionChart(selector.value);
+                }
+            };
+
+            const loadDashboardStats = async () => {
+                const grid = document.getElementById('dashboard-stats-grid');
+                const loaderTemplate = document.getElementById('loader-template');
+                if (!grid || !loaderTemplate) return;
+                grid.innerHTML = loaderTemplate.innerHTML;
+                try {
+                    const { stats } = await API.request('/api/admin/dashboard/stats', { headers: { 'Authorization': `Bearer ${appState.token}` } });
+                    grid.innerHTML = `
+                        <div class="bg-white p-6 rounded-2xl shadow-lg transition transform hover:scale-105"><p class="text-sm text-gray-500">总提交数</p><p class="text-3xl font-bold text-gray-800">${stats.totalSubmissions}</p></div>
+                        <div class="bg-white p-6 rounded-2xl shadow-lg transition transform hover:scale-105"><p class="text-sm text-gray-500">今日提交</p><p class="text-3xl font-bold text-blue-500">${stats.todaySubmissions}</p></div>
+                        <div class="bg-white p-6 rounded-2xl shadow-lg transition transform hover:scale-105"><p class="text-sm text-gray-500">待审核反馈</p><p class="text-3xl font-bold text-yellow-500">${stats.feedbackByStatus.pending || 0}</p></div>
+                        <div class="bg-white p-6 rounded-2xl shadow-lg transition transform hover:scale-105"><p class="text-sm text-gray-500">已通过反馈</p><p class="text-3xl font-bold text-green-500">${stats.feedbackByStatus.approved || 0}</p></div>
+                    `;
+                } catch (error) {
+                    if (String(error).includes('401')) handleLogout();
+                    else grid.innerHTML = `<p class="text-red-500">无法加载仪表盘数据。</p>`;
+                }
+            };
+            
+            const renderQuestionChart = async (questionId) => {
+                const canvas = document.getElementById('question-chart');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                if (appState.chartInstance) appState.chartInstance.destroy();
+
+                try {
+                    const data = await API.request(`/api/results/question/${questionId}`, { headers: { 'Authorization': `Bearer ${appState.token}` } });
+                    const labels = Object.keys(data.results);
+                    const values = labels.map(label => data.results[label].count);
+                    
+                    appState.chartInstance = new Chart(ctx, {
+                        type: questionId === 'buy_interest' ? 'bar' : 'pie',
+                        data: {
+                            labels,
+                            datasets: [{
+                                label: '回答数量',
+                                data: values,
+                                backgroundColor: ['#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899'],
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } } }
+                    });
+                } catch (error) { console.error("图表加载失败:", error); }
+            };
+
+            const loadSubmissions = async (page = 1) => {
+                const tableBody = document.getElementById('submissions-table-body');
+                const loaderTemplate = document.getElementById('loader-template');
+                if (!tableBody || !loaderTemplate) return;
+                tableBody.innerHTML = `<tr><td colspan="4">${loaderTemplate.innerHTML}</td></tr>`;
+                try {
+                    const response = await API.request(`/api/admin/submissions?page=${page}`, { headers: { 'Authorization': `Bearer ${appState.token}` } });
+                    const data = response.data;
+
+                    if (data.length === 0) {
+                        tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-gray-500">没有问卷数据。</td></tr>';
+                        return;
+                    }
+                    tableBody.innerHTML = data.map(sub => `
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500">${sub._id.slice(-6)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${new Date(sub.submittedAt).toLocaleString()}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${sub.demographics.age} / ${sub.demographics.gender}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <button data-submission-id="${sub._id}" class="view-details-btn text-blue-600 hover:text-blue-900">查看详情</button>
+                            </td>
+                        </tr>
+                    `).join('');
+                } catch (error) {
+                    tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-red-500">无法加载问卷数据。</td></tr>';
+                }
+            };
+
+            const setupFeedbackView = () => {
+                loadFeedback();
+            };
+
+            const loadFeedback = async () => {
+                const feedbackList = document.getElementById('feedback-list');
+                const loaderTemplate = document.getElementById('loader-template');
+                if (!feedbackList || !loaderTemplate) return;
+                
+                document.querySelectorAll('.status-filter-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.status === appState.feedbackStatusFilter);
+                });
+
+                feedbackList.innerHTML = loaderTemplate.innerHTML;
+                try {
+                    const { data } = await API.request(`/api/admin/feedback?status=${appState.feedbackStatusFilter}`, { headers: { 'Authorization': `Bearer ${appState.token}` } });
+                    if (data.length === 0) {
+                        feedbackList.innerHTML = '<p class="text-gray-500 text-center py-8">没有找到相关反馈。</p>';
+                        return;
+                    }
+                    feedbackList.innerHTML = data.map(group => `
+                        <div class="border rounded-lg p-4 bg-white shadow-sm feedback-group">
+                            <div class="border-b pb-2 mb-3">
+                                <p class="text-sm font-bold text-gray-700">用户: ...${group.submission._id.slice(-6)}</p>
+                                <p class="text-xs text-gray-500">${group.submission.demographics.age} / ${group.submission.demographics.gender}</p>
+                            </div>
+                            <div class="space-y-3">
+                            ${group.items.map(fb => `
+                                <div class="feedback-item" data-feedback-id="${fb._id}">
+                                    <p class="text-gray-800">${fb.content}</p>
+                                    ${appState.feedbackStatusFilter === 'pending' ? `
+                                    <div class="mt-2">
+                                        <button data-id="${fb._id}" data-action="approve" class="feedback-action-btn bg-green-100 text-green-700 hover:bg-green-200 px-3 py-1 rounded-md text-xs transition">通过</button>
+                                        <button data-id="${fb._id}" data-action="reject" class="feedback-action-btn bg-red-100 text-red-700 hover:bg-red-200 px-3 py-1 rounded-md text-xs ml-2 transition">拒绝</button>
+                                    </div>` : ''}
+                                </div>
+                            `).join('')}
+                            </div>
+                        </div>
+                    `).join('');
+                 } catch (error) {
+                     feedbackList.innerHTML = '<p class="text-red-500 text-center py-8">无法加载反馈数据。</p>';
+                 }
+            };
+
+            const handleLogin = async (e) => {
+                e.preventDefault();
+                const form = e.target;
+                const errorEl = document.getElementById('login-error');
+                errorEl.textContent = '';
+                try {
+                    const data = await API.request('/api/admin/login', { method: 'POST', body: JSON.stringify({ username: form.username.value, password: form.password.value }) });
+                    if (data.success) {
+                        appState.token = data.token;
+                        localStorage.setItem('admin_token', data.token);
+                        window.location.hash = '#dashboard';
+                        navigate();
+                    }
+                } catch (error) { errorEl.textContent = '登录失败，请检查用户名或密码。'; }
+            };
+
+            const handleLogout = () => {
+                appState.token = null;
+                localStorage.removeItem('admin_token');
+                if(appState.chartInstance) appState.chartInstance.destroy();
+                window.location.hash = '';
+                navigate();
+            };
+            
+            const handleFeedbackAction = async (target) => {
+                try {
+                    await API.request(`/api/admin/feedback/${target.dataset.id}/status`, {
+                        method: 'PUT',
+                        headers: { 'Authorization': `Bearer ${appState.token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status: target.dataset.action === 'approve' ? 'approved' : 'rejected' })
+                    });
+                    const itemToRemove = document.querySelector(`.feedback-item[data-feedback-id="${target.dataset.id}"]`);
+                    if(itemToRemove) {
+                        itemToRemove.style.cssText = 'transition: all 0.3s; opacity: 0; transform: translateX(-20px); height: 0; padding: 0; margin: 0; border: 0;';
+                        setTimeout(() => {
+                           const parentGroup = itemToRemove.closest('.feedback-group');
+                           itemToRemove.remove();
+                           if(parentGroup && !parentGroup.querySelector('.feedback-item')) parentGroup.remove();
+                           loadDashboardStats(); // 刷新仪表盘统计
+                        }, 300);
+                    }
+                } catch (error) {
+                    console.error("审核失败:", error);
+                    alert('操作失败，请查看控制台获取详情。');
+                }
+            };
+
+            const openSubmissionModal = async (submissionId) => {
+                const modal = document.getElementById('submission-modal');
+                const modalContent = document.getElementById('submission-modal-content');
+                const loaderTemplate = document.getElementById('loader-template');
+
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                modalContent.innerHTML = loaderTemplate.innerHTML;
+                
+                try {
+                    const { data } = await API.request(`/api/admin/submissions/${submissionId}`, { headers: { 'Authorization': `Bearer ${appState.token}` } });
+                    
+                    const answersHtml = Object.entries(data.answers).map(([key, value]) => `<div class="py-2"><p class="font-semibold text-gray-700">${key}</p><p class="text-gray-600">${value}</p></div>`).join('');
+                    
+                    modalContent.innerHTML = `
+                        <h2 class="text-2xl font-bold mb-4">问卷详情 (ID: ...${data._id.slice(-6)})</h2>
+                        <div class="space-y-4 divide-y">
+                            <div><h3 class="font-bold mt-4 mb-2">用户画像</h3>${Object.entries(data.demographics).map(([k,v]) => `<p><strong>${k}:</strong> ${v}</p>`).join('')}</div>
+                            <div><h3 class="font-bold mt-4 mb-2">问卷答案</h3>${answersHtml}</div>
+                            ${data.openEndedAnswers.length > 0 ? `<div><h3 class="font-bold mt-4 mb-2">开放式回答</h3>${data.openEndedAnswers.map(a => `<p><strong>${a.questionText}:</strong> ${a.answer}</p>`).join('')}</div>` : ''}
+                        </div>
+                        <button id="close-modal-btn" class="mt-6 bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300">关闭</button>
+                    `;
+                } catch(error) {
+                    modalContent.innerHTML = `<p class="text-red-500">无法加载详情。</p><button id="close-modal-btn" class="mt-6 bg-gray-200 text-gray-800 px-4 py-2 rounded-md">关闭</button>`;
+                }
+            };
+            
+            const navigate = () => {
+                if (!appState.token) {
+                    switchAppView('login');
+                    return;
+                }
+                switchAppView('dashboard');
+                const hash = window.location.hash.substring(1) || 'dashboard';
+                const viewId = document.querySelector(`#sidebar-nav a[href="#${hash}"]`)?.dataset.view || 'dashboard-content';
+                
+                appState.currentViewId = viewId;
+                renderMainContent(appState.currentViewId);
+
+                document.querySelectorAll('#sidebar-nav .sidebar-link').forEach(link => {
+                    link.classList.toggle('active', link.dataset.view === appState.currentViewId);
+                });
+            };
+            
+            document.addEventListener('click', (e) => {
+                const target = e.target;
+                
+                // 退出登录
+                if (target.id === 'logout-btn') {
+                    e.preventDefault();
+                    handleLogout();
+                }
+
+                // 侧边栏导航
+                const sidebarLink = target.closest('.sidebar-link[data-view]');
+                if(sidebarLink) {
+                    window.location.hash = sidebarLink.hash;
+                }
+                
+                // 审核操作
+                const feedbackActionBtn = target.closest('.feedback-action-btn');
+                if(feedbackActionBtn) {
+                    handleFeedbackAction(feedbackActionBtn);
+                }
+                
+                // 查看详情
+                const detailsBtn = target.closest('.view-details-btn');
+                if(detailsBtn) {
+                    openSubmissionModal(detailsBtn.dataset.submissionId);
+                }
+                
+                // 关闭弹窗
+                if (target.id === 'close-modal-btn' || target === document.getElementById('submission-modal')) {
+                    const modal = document.getElementById('submission-modal');
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                }
+
+                // 反馈状态过滤
+                const statusFilterBtn = target.closest('.status-filter-btn');
+                if(statusFilterBtn) {
+                    appState.feedbackStatusFilter = statusFilterBtn.dataset.status;
+                    loadFeedback();
+                }
+            });
+
+            document.getElementById('login-form').addEventListener('submit', handleLogin);
+            window.addEventListener('hashchange', navigate);
+
+            // 初始化
+            navigate();
+        });
+    </script>
+</body>
+</html>
+
