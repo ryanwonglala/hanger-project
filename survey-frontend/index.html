@@ -6,7 +6,7 @@
     <meta name="format-detection" content="telephone=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title data-key="title">Hanger Troubles? Let's Fix Them!</title>
+    <title data-key="title">Hanger Usage Survey</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -30,7 +30,6 @@
             <div class="carousel-slide">
                 <img src="images/hanger3.png" alt="Close-up of a white hanger">
             </div>
-            <!-- 黑板墙容器移到这里 -->
             <div id="feedback-wall-container" class="hidden"></div>
         </section>
 
@@ -44,107 +43,222 @@
 
             <div class="survey-body">
                 <form id="hangerSurveyForm">
-                    <div class="survey-slide active" data-slide="1">
+                    <!-- Slide 1: Intro -->
+                    <div class="survey-slide active" data-slide-id="intro">
                         <div class="intro-content">
-                            <div class="hanger-animation">
-                                <div class="hanger-icon">👚</div>
-                                <div class="hanger-icon deformed">👕</div>
-                            </div>
-                            <h2 data-key="introTitle">Ever feel like your hangers are failing you?</h2>
-                            <p data-key="introP">Your favorite sweater gets shoulder bumps. Your silky shirt slips off. We've all been there. Let's find a better way, together.</p>
+                            <h2 data-key="introTitle">Clothing Hanger Usage Needs and Preferences Survey</h2>
+                            <p data-key="introP">Your feedback will help us design a better hanger. Thank you for your participation!</p>
                             <div class="participant-counter">
                                 <span class="counter-icon" aria-hidden="true">👥</span>
                                 <span class="counter-text" data-key="participantText">Already</span>
                                 <span class="counter-number" id="participantCount">0</span>
                                 <span class="counter-text" data-key="participantText2">people shared their thoughts!</span>
                             </div>
-                            <button type="button" class="next-btn" data-key="introBtn">Let's Complain!</button>
+                            <button type="button" class="next-btn" data-key="introBtn">Start Survey</button>
                         </div>
                     </div>
 
-                    <div class="survey-slide" data-slide="2">
-                        <label class="survey-question" data-key="q1Title">What's your biggest hanger headache? 🤕</label>
-                        <p class="instructions" data-key="q1Instruction">Drag your biggest frustration into the bin!</p>
-                        <div class="interactive-zone">
-                            <div class="problems-pool">
-                                <div class="problem-card" data-value="deformation" data-key="q1Opt1">😩<br>Deformation</div>
-                                <div class="problem-card" data-value="slipping" data-key="q1Opt2">😒<br>Slipping Off</div>
-                                <div class="problem-card" data-value="breaking" data-key="q1Opt3">😠<br>Breaking</div>
-                                <div class="problem-card" data-value="space" data-key="q1Opt4">😵<br>Takes Space</div>
-                            </div>
-                            <div id="dropZone" class="drop-zone">
-                                <p data-key="q1DropZone">Drop Here</p>
-                                <div class="bin-emoji">🗑️</div>
-                            </div>
-                        </div>
-                        <input type="hidden" id="biggestProblem" name="biggest_problem">
-                        <div id="q1Stats" class="stats-chart hidden">
-                            <h3 data-key="statsTitle">What others chose:</h3>
-                            <div class="chart-container" id="q1ChartContainer"></div>
+                    <!-- Slide 2: Q1 -->
+                    <div class="survey-slide" data-slide-id="q1">
+                        <label class="survey-question" data-key="q1_title">Do you often encounter situations where clothes stick together after washing due to dampness?</label>
+                        <p class="instructions" data-key="q1_instruction">If so, do you wish for a hanger that could solve this problem?</p>
+                        <div class="options-grid">
+                            <label><input type="radio" name="q1_dampness" value="yes_strongly_desire"><div class="option-card" data-key="q1_opt1">Yes, frequently, and I strongly desire a solution</div></label>
+                            <label><input type="radio" name="q1_dampness" value="yes_not_necessary"><div class="option-card" data-key="q1_opt2">Yes, but I don't think a specialized hanger is necessary</div></label>
+                            <label><input type="radio" name="q1_dampness" value="no_rarely"><div class="option-card" data-key="q1_opt3">No, rarely or never encountered</div></label>
+                            <label><input type="radio" name="q1_dampness" value="not_sure"><div class="option-card" data-key="q1_opt4">Not sure</div></label>
                         </div>
                         <div class="navigation-btns">
                             <button type="button" class="prev-btn" data-key="backBtn">Back</button>
-                            <button type="button" class="next-btn hidden" data-key="nextBtn">Next</button>
+                            <button type="button" class="next-btn" data-key="nextBtn">Next</button>
                         </div>
                     </div>
                     
-                    <div class="survey-slide" data-slide="3">
-                        <label class="survey-question" data-key="q2Title">Btw, what kind of hanger do you use most? 🤔</label>
-                        <div class="options-grid-emoji">
-                            <label><input type="radio" name="hanger_type" value="plastic"><div class="option-card-emoji"><span data-key="q2Opt1">Plastic</span></div></label>
-                            <label><input type="radio" name="hanger_type" value="wood"><div class="option-card-emoji"><span data-key="q2Opt2">Wood</span></div></label>
-                            <label><input type="radio" name="hanger_type" value="velvet"><div class="option-card-emoji"><span data-key="q2Opt3">Velvet</span></div></label>
-                            <label><input type="radio" name="hanger_type" value="wire"><div class="option-card-emoji"><span data-key="q2Opt4">Wire</span></div></label>
-                            <label><input type="radio" name="hanger_type" value="custom" id="customOption"><div class="option-card-emoji custom-option"><span data-key="q2Opt5">Other ✏️</span></div></label>
+                    <!-- Slide 3: Q2 -->
+                    <div class="survey-slide" data-slide-id="q2">
+                        <label class="survey-question" data-key="q2_title">Which type of clothing hanger do you prefer?</label>
+                        <div class="options-grid">
+                            <label><input type="radio" name="q2_preference" value="multi-functional"><div class="option-card" data-key="q2_opt1">Multi-functional hanger</div></label>
+                            <label><input type="radio" name="q2_preference" value="single-function"><div class="option-card" data-key="q2_opt2">Single-function hanger</div></label>
+                            <label><input type="radio" name="q2_preference" value="no_preference"><div class="option-card" data-key="q2_opt3">No particular preference</div></label>
                         </div>
-                        <div id="q2Stats" class="stats-chart hidden">
-                            <h3 data-key="statsTitle">What others chose:</h3>
-                            <div class="chart-container" id="q2ChartContainer"></div>
-                        </div>
-                         <div class="navigation-btns">
-                            <button type="button" class="prev-btn" data-key="backBtn2">Back</button>
-                            <button type="button" class="next-btn" data-key="nextBtn2">Next</button>
+                        <div class="navigation-btns">
+                            <button type="button" class="prev-btn" data-key="backBtn">Back</button>
+                            <button type="button" class="next-btn" data-key="nextBtn">Next</button>
                         </div>
                     </div>
 
-                    <div class="survey-slide" data-slide="4">
-                        <label class="survey-question" data-key="q3Title">If a new multi-functional hanger appeared, would you buy it?</label>
-                        <div class="emoji-slider-container">
-                            <span class="slider-emoji">🤧</span>
-                            <input type="range" id="interestSlider" name="buy_interest" min="1" max="5" value="3" class="emoji-slider">
-                            <span class="slider-emoji">😍</span>
+                    <!-- Slide 4: Q3a -->
+                    <div class="survey-slide" data-slide-id="q3a">
+                        <label class="survey-question" data-key="q3a_title">What attracts you to multi-functional hangers?</label>
+                        <p class="instructions" data-key="q3a_instruction">(Multiple choices allowed)</p>
+                        <div class="options-grid">
+                            <label><input type="checkbox" name="q3a_reasons[]" value="saves_space"><div class="option-card" data-key="q3a_opt1">Saves storage space</div></label>
+                            <label><input type="checkbox" name="q3a_reasons[]" value="versatile"><div class="option-card" data-key="q3a_opt2">Versatile functions for different garments</div></label>
+                            <label><input type="checkbox" name="q3a_reasons[]" value="clever_design"><div class="option-card" data-key="q3a_opt3">Clever design solving specific problems</div></label>
+                            <label><input type="checkbox" name="q3a_reasons[]" value="improves_drying"><div class="option-card" data-key="q3a_opt4">Improves drying efficiency</div></label>
+                            <label><input type="checkbox" name="q3a_reasons[]" value="other"><div class="option-card" data-key="q3a_opt5">Other (Please specify)</div></label>
+                            <input type="text" name="q3a_other_text" class="text-input" placeholder="Please specify">
                         </div>
-                        <div id="sliderValue" class="slider-value-display">🤔</div>
                         <div class="navigation-btns">
-                            <button type="button" class="prev-btn" data-key="backBtn3">Back</button>
+                            <button type="button" class="prev-btn" data-key="backBtn">Back</button>
+                            <button type="button" class="next-btn" data-key="nextBtn">Next</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Slide 5: Q3b -->
+                    <div class="survey-slide" data-slide-id="q3b">
+                        <label class="survey-question" data-key="q3b_title">What attracts you to single-function hangers?</label>
+                        <p class="instructions" data-key="q3b_instruction">Furthermore, have you imagined any practical functions they could potentially add?</p>
+                        <textarea name="q3b_ideas" class="text-input" rows="5" data-key="q3b_placeholder" placeholder="Your thoughts..."></textarea>
+                        <div class="navigation-btns">
+                            <button type="button" class="prev-btn" data-key="backBtn">Back</button>
+                            <button type="button" class="next-btn" data-key="nextBtn">Next</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Slide 6: Q4 -->
+                    <div class="survey-slide" data-slide-id="q4">
+                        <label class="survey-question" data-key="q4_title">Do you think the functions of current multi-functional hangers are sufficiently comprehensive and practical?</label>
+                        <div class="options-grid">
+                            <label><input type="radio" name="q4_practicality" value="perfect"><div class="option-card" data-key="q4_opt1">Yes, functions are already quite perfect</div></label>
+                            <label><input type="radio" name="q4_practicality" value="gimmicks"><div class="option-card" data-key="q4_opt2">No, many functions are gimmicks and not practical</div></label>
+                            <label><input type="radio" name="q4_practicality" value="insufficient"><div class="option-card" data-key="q4_opt3">No, functions are still insufficient</div></label>
+                            <label><input type="radio" name="q4_practicality" value="not_sure"><div class="option-card" data-key="q4_opt4">Not sure / Haven't used them</div></label>
+                        </div>
+                        <div class="navigation-btns">
+                            <button type="button" class="prev-btn" data-key="backBtn">Back</button>
+                            <button type="button" class="next-btn" data-key="nextBtn">Next</button>
+                        </div>
+                    </div>
+
+                    <!-- Slide 7: Q5 -->
+                    <div class="survey-slide" data-slide-id="q5">
+                        <label class="survey-question" data-key="q5_title">Imagine an "ultimate hanger". Besides hanging clothes, what three core functions would you most want it to have?</label>
+                        <textarea name="q5_ultimate" class="text-input" rows="5" data-key="q5_placeholder" placeholder="1. ...&#10;2. ...&#10;3. ..."></textarea>
+                        <div class="navigation-btns">
+                            <button type="button" class="prev-btn" data-key="backBtn">Back</button>
+                            <button type="button" class="next-btn" data-key="nextBtn">Next</button>
+                        </div>
+                    </div>
+
+                    <!-- Slide 8: Q6 -->
+                    <div class="survey-slide" data-slide-id="q6">
+                        <label class="survey-question" data-key="q6_title">What is the main material of the hangers you most often use?</label>
+                         <div class="options-grid">
+                            <label><input type="radio" name="q6_material" value="plastic"><div class="option-card" data-key="q6_opt1">Plastic</div></label>
+                            <label><input type="radio" name="q6_material" value="wood"><div class="option-card" data-key="q6_opt2">Wood</div></label>
+                            <label><input type="radio" name="q6_material" value="metal"><div class="option-card" data-key="q6_opt3">Metal</div></label>
+                            <label><input type="radio" name="q6_material" value="other"><div class="option-card" data-key="q6_opt4">Other</div></label>
+                            <input type="text" name="q6_other_text" class="text-input" data-key="q_other_placeholder" placeholder="Please specify">
+                        </div>
+                        <div class="navigation-btns">
+                            <button type="button" class="prev-btn" data-key="backBtn">Back</button>
+                            <button type="button" class="next-btn" data-key="nextBtn">Next</button>
+                        </div>
+                    </div>
+
+                    <!-- Slide 9: Q7 -->
+                    <div class="survey-slide" data-slide-id="q7">
+                        <label class="survey-question" data-key="q7_title">What are your expectations regarding the load-bearing capacity of a hanger?</label>
+                        <p class="instructions" data-key="q3a_instruction">(Multiple choices allowed)</p>
+                        <div class="options-grid">
+                            <label><input type="checkbox" name="q7_load[]" value="lightweight"><div class="option-card" data-key="q7_opt1">Can hold lightweight clothing</div></label>
+                            <label><input type="checkbox" name="q7_load[]" value="medium-weight"><div class="option-card" data-key="q7_opt2">Can hold medium-weight clothing</div></label>
+                            <label><input type="checkbox" name="q7_load[]" value="heavy"><div class="option-card" data-key="q7_opt3">Can hold heavy clothing without deforming</div></label>
+                            <label><input type="checkbox" name="q7_load[]" value="multiple_items"><div class="option-card" data-key="q7_opt4">Can hold multiple pairs of pants</div></label>
+                            <label><input type="checkbox" name="q7_load[]" value="other"><div class="option-card" data-key="q7_opt5">Other</div></label>
+                            <input type="text" name="q7_other_text" class="text-input" data-key="q_other_placeholder" placeholder="Please specify">
+                        </div>
+                        <div class="navigation-btns">
+                            <button type="button" class="prev-btn" data-key="backBtn">Back</button>
+                            <button type="button" class="next-btn" data-key="nextBtn">Next</button>
+                        </div>
+                    </div>
+
+                    <!-- Slide 10: Q8 -->
+                    <div class="survey-slide" data-slide-id="q8">
+                        <label class="survey-question" data-key="q8_title">How heavy do you prefer the hanger itself to be?</label>
+                        <div class="options-grid">
+                            <label><input type="radio" name="q8_weight" value="very_lightweight"><div class="option-card" data-key="q8_opt1">Very lightweight</div></label>
+                            <label><input type="radio" name="q8_weight" value="moderate"><div class="option-card" data-key="q8_opt2">Moderate weight</div></label>
+                            <label><input type="radio" name="q8_weight" value="hefty"><div class="option-card" data-key="q8_opt3">Has some heft</div></label>
+                            <label><input type="radio" name="q8_weight" value="no_preference"><div class="option-card" data-key="q8_opt4">No preference</div></label>
+                        </div>
+                        <div class="navigation-btns">
+                            <button type="button" class="prev-btn" data-key="backBtn">Back</button>
+                            <button type="button" class="next-btn" data-key="nextBtn">Next</button>
+                        </div>
+                    </div>
+
+                    <!-- Slide 11: Q9 -->
+                    <div class="survey-slide" data-slide-id="q9">
+                        <label class="survey-question" data-key="q9_title">What is your expected service life for a clothing hanger?</label>
+                         <div class="options-grid">
+                            <label><input type="radio" name="q9_lifespan" value="<1_year"><div class="option-card" data-key="q9_opt1">Less than 1 year</div></label>
+                            <label><input type="radio" name="q9_lifespan" value="1-3_years"><div class="option-card" data-key="q9_opt2">1-3 years</div></label>
+                            <label><input type="radio" name="q9_lifespan" value="3-5_years"><div class="option-card" data-key="q9_opt3">3-5 years</div></label>
+                            <label><input type="radio" name="q9_lifespan" value=">5_years"><div class="option-card" data-key="q9_opt4">More than 5 years</div></label>
+                        </div>
+                        <div class="navigation-btns">
+                            <button type="button" class="prev-btn" data-key="backBtn">Back</button>
+                            <button type="button" class="next-btn" data-key="nextBtn">Next</button>
+                        </div>
+                    </div>
+
+                    <!-- Slide 12: Q10 -->
+                    <div class="survey-slide" data-slide-id="q10">
+                        <label class="survey-question" data-key="q10_title">What is your opinion on the current market prices of clothing hangers?</label>
+                        <div class="options-grid">
+                            <label><input type="radio" name="q10_price" value="expensive"><div class="option-card" data-key="q10_opt1">Relatively expensive</div></label>
+                            <label><input type="radio" name="q10_price" value="reasonable"><div class="option-card" data-key="q10_opt2">Reasonable</div></label>
+                            <label><input type="radio" name="q10_price" value="cheap"><div class="option-card" data-key="q10_opt3">Cheap</div></label>
+                            <label><input type="radio" name="q10_price" value="not_sure"><div class="option-card" data-key="q10_opt4">Not sure / Haven't paid attention</div></label>
+                        </div>
+                        <div class="navigation-btns">
+                            <button type="button" class="prev-btn" data-key="backBtn">Back</button>
+                            <button type="button" class="next-btn" data-key="nextBtn">Next</button>
+                        </div>
+                    </div>
+
+                    <!-- Slide 13: Q11 -->
+                    <div class="survey-slide" data-slide-id="q11">
+                        <label class="survey-question" data-key="q11_title">How important is it to you that hangers are made from recyclable materials?</label>
+                        <div class="options-grid">
+                            <label><input type="radio" name="q11_recyclable" value="very_important"><div class="option-card" data-key="q11_opt1">Very important</div></label>
+                            <label><input type="radio" name="q11_recyclable" value="somewhat_important"><div class="option-card" data-key="q11_opt2">Somewhat important</div></label>
+                            <label><input type="radio" name="q11_recyclable" value="not_very_important"><div class="option-card" data-key="q11_opt3">Not very important</div></label>
+                            <label><input type="radio" name="q11_recyclable" value="indifferent"><div class="option-card" data-key="q11_opt4">Indifferent</div></label>
+                        </div>
+                        <div class="navigation-btns">
+                            <button type="button" class="prev-btn" data-key="backBtn">Back</button>
+                            <button type="button" class="next-btn" data-key="nextBtn">Next</button>
+                        </div>
+                    </div>
+
+                     <!-- Slide 14: Q12 -->
+                    <div class="survey-slide" data-slide-id="q12">
+                        <label class="survey-question" data-key="q12_title">To help design a better hanger, what other thoughts or suggestions do you have?</label>
+                        <textarea name="q12_suggestions" class="text-input" rows="5" data-key="q12_placeholder" placeholder="Any other ideas..."></textarea>
+                        <div class="navigation-btns">
+                            <button type="button" class="prev-btn" data-key="backBtn">Back</button>
                             <button type="button" class="submit-btn" data-key="submitBtn">Finish!</button>
                         </div>
                     </div>
                     
-                    <div class="survey-slide" data-slide="5">
+                    <!-- Final Slide: Thank You -->
+                    <div class="survey-slide" data-slide-id="thanks">
                         <div class="thank-you-content">
                             <div class="thank-you-icon">🎉</div>
                             <h2 data-key="thanksTitle">Thank You! 🙏</h2>
                             <p data-key="thanksP">Your ideas are sparking our innovation! We're one step closer to a better design.</p>
-                            <!-- 原黑板墙容器已移除 -->
                         </div>
                     </div>
                 </form>
             </div>
         </div>
     </main>
-
-    <div id="blackboardModal" class="blackboard-modal">
-        <div class="blackboard-container">
-            <div class="blackboard">
-                <button class="blackboard-close" data-key="closeBtn">✕</button>
-                <h3 data-key="blackboardTitle">Tell us more!</h3>
-                <textarea id="customInput" class="blackboard-input" rows="3" placeholder="What type of hanger do you use?"></textarea>
-                <button class="blackboard-submit" data-key="blackboardSubmit">Done</button>
-            </div>
-        </div>
-    </div>
-
+    
     <script src="config/api.js"></script>
     <script src="script.js"></script>
 </body>

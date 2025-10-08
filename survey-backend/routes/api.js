@@ -5,7 +5,7 @@ const Submission = require('../models/Submission');
 const Feedback = require('../models/Feedback');
 const { analyzeWordsByLength } = require('../utils/wordAnalysis');
 
-// 验证结果处理中间件
+// Validation middleware
 const validate = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -14,22 +14,19 @@ const validate = (req, res, next) => {
   next();
 };
 
-// 1. 提交问卷数据
+// 1. Submit survey data
 router.post('/submit', [
-  body('demographics.gender').notEmpty().withMessage('性别不能为空'),
-  body('demographics.age').notEmpty().withMessage('年龄不能为空'),
-  body('demographics.occupation').notEmpty().withMessage('职业不能为空'),
-  body('answers').isObject().withMessage('答案必须是对象格式'),
-  body('language').notEmpty().withMessage('语言环境不能为空'),
+  body('answers').isObject().withMessage('Answers must be an object'),
+  body('language').notEmpty().withMessage('Language code is required'),
   validate
 ], async (req, res) => {
   try {
-    const { demographics, answers, openEndedAnswers, language } = req.body;
+    const { answers, openEndedAnswers, language } = req.body;
 
     const submission = new Submission({
-      demographics,
       answers,
       openEndedAnswers: openEndedAnswers || [],
+      language,
       ipAddress: req.ip,
       userAgent: req.get('user-agent')
     });
@@ -44,7 +41,7 @@ router.post('/submit', [
             content: item.answer,
             questionId: item.questionId,
             questionText: item.questionText,
-            language: language // 保存语言
+            language: language
           }).save();
         }
       });
@@ -53,88 +50,79 @@ router.post('/submit', [
 
     res.status(201).json({
       success: true,
-      message: '问卷提交成功',
+      message: 'Survey submitted successfully',
       submissionId: submission._id
     });
   } catch (error) {
-    console.error('提交失败:', error);
-    res.status(500).json({ error: '提交失败，请稍后重试' });
+    console.error('Submission failed:', error);
+    res.status(500).json({ error: 'Submission failed, please try again later' });
   }
 });
 
-// 2. 获取总参与人数
+// 2. Get total participant count
 router.get('/stats/total', async (req, res) => {
   try {
     const totalParticipants = await Submission.countDocuments({ isValid: true });
     res.json({ totalParticipants });
   } catch (error) {
-    console.error('获取总人数失败:', error);
-    res.status(500).json({ error: '获取数据失败' });
+    console.error('Failed to get total count:', error);
+    res.status(500).json({ error: 'Failed to get data' });
   }
 });
 
-// 3. 获取用户画像统计数据
+// 3. Get demographic stats (remains for potential future use)
 router.get('/stats/demographics', async (req, res) => {
-  try {
-    const submissions = await Submission.find({ isValid: true });
-    const genderStats = {}, ageStats = {}, occupationStats = {};
+    // This route can remain for analyzing any data that does include demographics
+    try {
+        const submissions = await Submission.find({ isValid: true, 'demographics.gender': { $exists: true } });
+        const genderStats = {}, ageStats = {}, occupationStats = {};
 
-    submissions.forEach(sub => {
-      const { gender, age, occupation } = sub.demographics;
-      genderStats[gender] = (genderStats[gender] || 0) + 1;
-      ageStats[age] = (ageStats[age] || 0) + 1;
-      occupationStats[occupation] = (occupationStats[occupation] || 0) + 1;
-    });
+        submissions.forEach(sub => {
+            const { gender, age, occupation } = sub.demographics;
+            if(gender) genderStats[gender] = (genderStats[gender] || 0) + 1;
+            if(age) ageStats[age] = (ageStats[age] || 0) + 1;
+            if(occupation) occupationStats[occupation] = (occupationStats[occupation] || 0) + 1;
+        });
 
-    res.json({ gender: genderStats, age: ageStats, occupation: occupationStats, total: submissions.length });
-  } catch (error) {
-    console.error('获取画像数据失败:', error);
-    res.status(500).json({ error: '获取数据失败' });
-  }
+        res.json({ gender: genderStats, age: ageStats, occupation: occupationStats, total: submissions.length });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to get data' });
+    }
 });
 
-// 4. 获取单题统计结果
+// 4. Get stats for a single question
 router.get('/results/question/:questionId', [
   param('questionId').notEmpty(),
   validate
 ], async (req, res) => {
   try {
     const { questionId } = req.params;
-    const submissions = await Submission.find({ isValid: true });
+    // Use aggregation for better performance
+    const results = await Submission.aggregate([
+      { $match: { isValid: true } },
+      { $project: { answer: `$answers.${questionId}` } },
+      { $unwind: '$answer' },
+      { $group: { _id: '$answer', count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]);
 
-    const optionCounts = {};
-    let totalAnswers = 0;
-
-    submissions.forEach(sub => {
-      const answer = sub.answers.get(questionId);
-      if (answer != null) { // Use != null to catch both undefined and null
-        totalAnswers++;
-        if (Array.isArray(answer)) {
-          answer.forEach(option => {
-            optionCounts[option] = (optionCounts[option] || 0) + 1;
-          });
-        } else {
-          optionCounts[answer] = (optionCounts[answer] || 0) + 1;
+    const totalAnswers = results.reduce((sum, item) => sum + item.count, 0);
+    const formattedResults = {};
+    results.forEach(item => {
+        formattedResults[item._id] = {
+            count: item.count,
+            percentage: totalAnswers > 0 ? ((item.count / totalAnswers) * 100).toFixed(1) : "0.0"
         }
-      }
     });
 
-    const results = {};
-    Object.entries(optionCounts).forEach(([option, count]) => {
-      results[option] = {
-        count,
-        percentage: totalAnswers > 0 ? ((count / totalAnswers) * 100).toFixed(1) : "0.0"
-      };
-    });
-
-    res.json({ questionId, totalAnswers, results });
+    res.json({ questionId, totalAnswers, results: formattedResults });
   } catch (error) {
-    console.error('获取题目统计失败:', error);
-    res.status(500).json({ error: '获取数据失败' });
+    console.error('Failed to get question stats:', error);
+    res.status(500).json({ error: 'Failed to get data' });
   }
 });
 
-// 5. 获取公开的反馈（黑板墙） - 已更新
+// 5. Get public feedback (for blackboard wall)
 router.get('/feedback/public', [
     query('limit').optional().isInt({ min: 1, max: 50 }).toInt(),
     query('lang').optional().isString().isIn(['en', 'zh-CN', 'zh-TW']),
@@ -142,45 +130,34 @@ router.get('/feedback/public', [
 ], async (req, res) => {
   try {
     const { limit = 10, lang } = req.query;
-    
     let query = { status: 'approved' };
     if (lang) {
         query.language = lang;
     }
-
     const feedbacks = await Feedback
       .find(query)
       .sort({ displayOrder: -1, createdAt: -1 })
       .limit(limit)
       .select('content');
-
-    res.json({
-      success: true,
-      count: feedbacks.length,
-      feedbacks
-    });
+    res.json({ success: true, count: feedbacks.length, feedbacks });
   } catch (error) {
-    console.error('获取公开反馈失败:', error);
-    res.status(500).json({ error: '获取数据失败' });
+    res.status(500).json({ error: 'Failed to get data' });
   }
 });
 
-
-// 6. 获取高频词统计
+// 6. Get keyword stats
 router.get('/stats/keywords', async (req, res) => {
-  try {
-    const wordLength = parseInt(req.query.length) || 2;
-    const minFrequency = parseInt(req.query.minFreq) || 3;
-
-    const feedbacks = await Feedback.find({ status: 'approved' });
-    const texts = feedbacks.map(f => f.content);
-    const keywords = analyzeWordsByLength(texts, wordLength, minFrequency);
-
-    res.json({ success: true, keywords, totalFeedbacks: texts.length });
-  } catch (error) {
-    console.error('获取高频词失败:', error);
-    res.status(500).json({ error: '分析失败' });
-  }
+    // ... This route remains unchanged
+    try {
+        const wordLength = parseInt(req.query.length) || 2;
+        const minFrequency = parseInt(req.query.minFreq) || 3;
+        const feedbacks = await Feedback.find({ status: 'approved' });
+        const texts = feedbacks.map(f => f.content);
+        const keywords = analyzeWordsByLength(texts, wordLength, minFrequency);
+        res.json({ success: true, keywords, totalFeedbacks: texts.length });
+    } catch (error) {
+        res.status(500).json({ error: 'Analysis failed' });
+    }
 });
 
 module.exports = router;

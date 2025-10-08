@@ -1,39 +1,31 @@
 const mongoose = require('mongoose');
 
 const submissionSchema = new mongoose.Schema({
-  // 用户画像数据
+  // User profile data (now optional)
   demographics: {
-    gender: {
-      type: String,
-      enum: ['男', '女', '其他', '不愿透露'],
-      required: true
-    },
-    age: {
-      type: String,
-      enum: ['18岁以下', '18-25', '26-30', '31-40', '41-50', '50岁以上'],
-      required: true
-    },
-    occupation: {
-      type: String,
-      required: true
-    }
+    gender: String,
+    age: String,
+    occupation: String
   },
 
-  // 问卷答案 (使用灵活的结构存储不同题目的答案)
+  // Survey answers (flexible structure)
   answers: {
     type: Map,
     of: mongoose.Schema.Types.Mixed,
     required: true
   },
 
-  // 开放式回答
+  // Open-ended answers
   openEndedAnswers: [{
     questionId: String,
     questionText: String,
     answer: String
   }],
+  
+  // Submission language
+  language: String,
 
-  // 提交信息
+  // Submission info
   submittedAt: {
     type: Date,
     default: Date.now
@@ -41,19 +33,18 @@ const submissionSchema = new mongoose.Schema({
   ipAddress: String,
   userAgent: String,
 
-  // 数据状态
+  // Data status
   isValid: {
     type: Boolean,
     default: true
   },
-  notes: String // 管理员备注
+  notes: String // Admin notes
 }, {
   timestamps: true
 });
 
-// 索引优化
+// Index optimization
 submissionSchema.index({ submittedAt: -1 });
-submissionSchema.index({ 'demographics.gender': 1 });
 submissionSchema.index({ 'demographics.age': 1 });
 
 module.exports = mongoose.model('Submission', submissionSchema);
