@@ -2,7 +2,7 @@
 const API_CONFIG = {
     // 🔧 开发阶段：临时硬编码为 localhost
     // 部署时再修改为自动检测
-    BASE_URL: 'http://localhost:3000',
+    BASE_URL: 'https://hanger-project.vercel.app',
     
     // 生产环境配置（暂时不用）
     // BASE_URL: window.location.hostname === 'localhost' 
